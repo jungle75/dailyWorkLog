@@ -3,7 +3,7 @@ import { seedEntries } from '../data/seed'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim()
 const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 10000)
-const API_USE_LOCAL_FALLBACK = (import.meta.env.VITE_API_USE_LOCAL_FALLBACK ?? 'true') !== 'false'
+const API_USE_LOCAL_FALLBACK = (import.meta.env.VITE_API_USE_LOCAL_FALLBACK ?? 'false') === 'true'
 const STORAGE_KEY = 'worksheet-vue-work-entries'
 
 interface DailyQuery {
