@@ -41,6 +41,18 @@ npm run dev
    - `VITE_API_USE_LOCAL_FALLBACK=false`
 4. Rebuild and redeploy frontend to GitHub Pages.
 
+## Render quick setup (recommended)
+
+1. Push this repo with `render.yaml`.
+2. In Render: `New +` -> `Blueprint` -> select this repository.
+3. Render will create `daily-worklog-api` service with persistent disk at `/var/data`.
+4. After deploy, copy API URL:
+   - `https://<render-service>.onrender.com/api`
+5. In GitHub repository:
+   - `Settings -> Secrets and variables -> Actions -> Variables`
+   - create `VITE_API_BASE_URL` with Render URL above
+6. Push to `main` again to trigger Pages deploy (workflow now injects this variable at build time).
+
 ## API endpoints
 
 - `GET /api/work-entries/assignees`

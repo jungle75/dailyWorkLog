@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: daily-worklog-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm run api:start
+    autoDeploy: true
+    healthCheckPath: /api/work-entries/assignees
+    envVars:
+      - key: API_BASE_PATH
+        value: /api
+      - key: CORS_ORIGIN
+        value: https://jungle75.github.io,http://localhost:5173
+      - key: DATA_FILE
+        value: /var/data/work-entries.json
+    disk:
+      name: work-entries-data
+      mountPath: /var/data
+      sizeGB: 1

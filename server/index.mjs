@@ -8,7 +8,10 @@ const __dirname = path.dirname(__filename)
 
 const PORT = Number(process.env.PORT ?? 8080)
 const API_BASE_PATH = (process.env.API_BASE_PATH ?? '/api').replace(/\/+$/, '')
-const CORS_ORIGIN = process.env.CORS_ORIGIN ?? '*'
+const CORS_ORIGIN = (process.env.CORS_ORIGIN ?? '*')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
 const DATA_FILE = process.env.DATA_FILE ?? path.join(__dirname, 'data', 'work-entries.json')
 
 const ensureDataFile = async () => {
@@ -38,22 +41,40 @@ const writeEntries = async (entries) => {
   await fs.writeFile(DATA_FILE, next, 'utf8')
 }
 
-const sendJson = (res, status, data) => {
-  res.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': CORS_ORIGIN,
+const getCorsHeaders = (req) => {
+  const requestOrigin = req.headers.origin
+  const allowAny = CORS_ORIGIN.includes('*')
+  const allowOrigin = allowAny
+    ? '*'
+    : requestOrigin && CORS_ORIGIN.includes(requestOrigin)
+      ? requestOrigin
+      : CORS_ORIGIN[0] ?? 'null'
+
+  const headers = {
+    'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+  }
+
+  if (!allowAny) {
+    headers.Vary = 'Origin'
+  }
+
+  return headers
+}
+
+const sendJson = (req, res, status, data) => {
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    ...getCorsHeaders(req),
   })
   res.end(JSON.stringify(data))
 }
 
-const sendText = (res, status, message) => {
+const sendText = (req, res, status, message) => {
   res.writeHead(status, {
     'Content-Type': 'text/plain; charset=utf-8',
-    'Access-Control-Allow-Origin': CORS_ORIGIN,
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    ...getCorsHeaders(req),
   })
   res.end(message)
 }
@@ -100,15 +121,13 @@ await ensureDataFile()
 const server = createServer(async (req, res) => {
   try {
     if (!req.url || !req.method) {
-      sendText(res, 400, 'Bad request')
+      sendText(req, res, 400, 'Bad request')
       return
     }
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
-        'Access-Control-Allow-Origin': CORS_ORIGIN,
-        'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        ...getCorsHeaders(req),
       })
       res.end()
       return
@@ -117,7 +136,7 @@ const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host ?? `localhost:${PORT}`}`)
     const route = toRoute(url.pathname)
     if (!route) {
-      sendText(res, 404, 'Not found')
+      sendText(req, res, 404, 'Not found')
       return
     }
 
@@ -125,7 +144,7 @@ const server = createServer(async (req, res) => {
       const entries = await readEntries()
       const names = [...new Set(entries.map((entry) => entry.assignee).filter(Boolean))]
       names.sort((a, b) => String(a).localeCompare(String(b), 'ko'))
-      sendJson(res, 200, ['전체', ...names])
+      sendJson(req, res, 200, ['전체', ...names])
       return
     }
 
@@ -140,7 +159,7 @@ const server = createServer(async (req, res) => {
         return matchDate && matchAssignee
       })
 
-      sendJson(res, 200, sortByDateDesc(filtered))
+      sendJson(req, res, 200, sortByDateDesc(filtered))
       return
     }
 
@@ -158,7 +177,7 @@ const server = createServer(async (req, res) => {
         return matchFrom && matchTo && matchAssignee
       })
 
-      sendJson(res, 200, sortByDateDesc(filtered))
+      sendJson(req, res, 200, sortByDateDesc(filtered))
       return
     }
 
@@ -168,11 +187,11 @@ const server = createServer(async (req, res) => {
       const entries = await readEntries()
       const found = entries.find((entry) => entry.id === id)
       if (!found) {
-        sendText(res, 404, 'Work entry not found')
+        sendText(req, res, 404, 'Work entry not found')
         return
       }
 
-      sendJson(res, 200, found)
+      sendJson(req, res, 200, found)
       return
     }
 
@@ -182,7 +201,7 @@ const server = createServer(async (req, res) => {
       const next = { id: makeId(), ...payload }
       entries.unshift(next)
       await writeEntries(entries)
-      sendJson(res, 201, next)
+      sendJson(req, res, 201, next)
       return
     }
 
@@ -192,21 +211,21 @@ const server = createServer(async (req, res) => {
       const entries = await readEntries()
       const index = entries.findIndex((entry) => entry.id === id)
       if (index < 0) {
-        sendText(res, 404, 'Work entry not found')
+        sendText(req, res, 404, 'Work entry not found')
         return
       }
 
       const updated = { id, ...payload }
       entries[index] = updated
       await writeEntries(entries)
-      sendJson(res, 200, updated)
+      sendJson(req, res, 200, updated)
       return
     }
 
-    sendText(res, 404, 'Not found')
+    sendText(req, res, 404, 'Not found')
   } catch (error) {
     console.error('[API ERROR]', error)
-    sendText(res, 500, 'Internal server error')
+    sendText(req, res, 500, 'Internal server error')
   }
 })
 
