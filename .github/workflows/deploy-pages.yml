@@ -31,20 +31,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate frontend env
+      - name: Resolve frontend env
         run: |
-          if [ -z "${{ vars.VITE_API_BASE_URL }}" ]; then
-            echo "Repository variable VITE_API_BASE_URL is not set."
-            echo "Set it to your Render API URL, e.g. https://daily-worklog-api.onrender.com/api"
+          URL="${{ vars.VITE_API_BASE_URL }}"
+          if [ -z "$URL" ]; then
+            URL="${{ secrets.VITE_API_BASE_URL }}"
+          fi
+          if [ -z "$URL" ]; then
+            echo "VITE_API_BASE_URL is not set."
+            echo "Set repository variable OR repository secret VITE_API_BASE_URL."
+            echo "Example: https://daily-worklog-api.onrender.com/api"
             exit 1
           fi
+          echo "VITE_API_BASE_URL=$URL" >> $GITHUB_ENV
+          echo "VITE_API_TIMEOUT_MS=10000" >> $GITHUB_ENV
+          echo "VITE_API_USE_LOCAL_FALLBACK=false" >> $GITHUB_ENV
 
       - name: Build
         run: npm run build
-        env:
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
-          VITE_API_TIMEOUT_MS: "10000"
-          VITE_API_USE_LOCAL_FALLBACK: "false"
 
       - name: Add SPA fallback
         run: cp dist/index.html dist/404.html
