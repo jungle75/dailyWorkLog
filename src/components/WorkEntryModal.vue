@@ -191,8 +191,8 @@ const submit = () => {
       </div>
 
       <footer class="modal-foot">
-        <button class="btn" @click="submit">저장</button>
         <button class="btn btn-outline" @click="emit('close')">취소</button>
+        <button class="btn" @click="submit">저장</button>
       </footer>
     </section>
   </div>

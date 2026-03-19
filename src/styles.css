@@ -125,6 +125,7 @@ button:disabled {
   border-radius: 12px;
   padding: 18px;
   box-shadow: 0 8px 20px #0010330d;
+  overflow-y: auto;
 }
 
 .panel-header {
