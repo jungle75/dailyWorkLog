@@ -279,9 +279,13 @@ label {
   border-radius: 8px;
   padding: 8px 14px;
   font-weight: 600;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
-.btn:hover {
+.btn:not(.btn-outline):not(.btn-ghost):hover {
   background: var(--primary-hover);
 }
 
@@ -291,9 +295,21 @@ label {
   color: var(--text-primary);
 }
 
+.btn-outline:hover {
+  border-color: #c3c9d4;
+  background: #f8fafc;
+  color: var(--text-primary);
+}
+
 .btn-ghost {
   border-color: #f3f4f6;
   background: #f3f4f6;
+  color: var(--text-primary);
+}
+
+.btn-ghost:hover {
+  border-color: #e5e7eb;
+  background: #e5e7eb;
   color: var(--text-primary);
 }
 

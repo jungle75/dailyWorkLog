@@ -41,11 +41,6 @@ const applyFilter = async () => {
   }
 }
 
-const resetFilter = async () => {
-  draftFilter.value = { date: today }
-  await applyFilter()
-}
-
 const openCreate = () => {
   modalMode.value = 'create'
   editingId.value = null
@@ -110,7 +105,6 @@ onMounted(async () => {
         <input v-model="draftFilter.date" type="date" />
       </label>
       <button class="btn" :disabled="loading" @click="applyFilter">조회</button>
-      <button class="btn btn-ghost" :disabled="loading" @click="resetFilter">초기화</button>
     </div>
 
     <p class="summary">총 {{ totalCount }}건</p>

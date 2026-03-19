@@ -62,11 +62,6 @@ const applyFilter = async () => {
   }
 }
 
-const resetFilter = async () => {
-  draftFilter.value = makeDefault()
-  await applyFilter()
-}
-
 const toCsvLine = (fields: Array<string | number>) => {
   return fields
     .map((field) => {
@@ -144,7 +139,6 @@ onMounted(async () => {
         </select>
       </label>
       <button class="btn" :disabled="loading" @click="applyFilter">조회</button>
-      <button class="btn btn-ghost" :disabled="loading" @click="resetFilter">초기화</button>
       <button class="btn btn-outline" :disabled="loading || rows.length === 0" @click="downloadCsv">엑셀 다운로드</button>
     </div>
 
