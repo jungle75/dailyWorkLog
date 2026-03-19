@@ -12,9 +12,11 @@ services:
         value: /api
       - key: CORS_ORIGIN
         value: https://jungle75.github.io,http://localhost:5173
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_TABLE
+        value: work_entries
       - key: DATA_FILE
-        value: /var/data/work-entries.json
-    disk:
-      name: work-entries-data
-      mountPath: /var/data
-      sizeGB: 1
+        value: /tmp/work-entries.json

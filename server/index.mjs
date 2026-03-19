@@ -13,33 +13,11 @@ const CORS_ORIGIN = (process.env.CORS_ORIGIN ?? '*')
   .map((origin) => origin.trim())
   .filter(Boolean)
 const DATA_FILE = process.env.DATA_FILE ?? path.join(__dirname, 'data', 'work-entries.json')
-
-const ensureDataFile = async () => {
-  const dir = path.dirname(DATA_FILE)
-  await fs.mkdir(dir, { recursive: true })
-
-  try {
-    await fs.access(DATA_FILE)
-  } catch {
-    await fs.writeFile(DATA_FILE, '[]\n', 'utf8')
-  }
-}
-
-const readEntries = async () => {
-  const raw = await fs.readFile(DATA_FILE, 'utf8')
-  const parsed = JSON.parse(raw)
-
-  if (!Array.isArray(parsed)) {
-    throw new Error('DATA_FILE must be an array')
-  }
-
-  return parsed
-}
-
-const writeEntries = async (entries) => {
-  const next = `${JSON.stringify(entries, null, 2)}\n`
-  await fs.writeFile(DATA_FILE, next, 'utf8')
-}
+const SUPABASE_URL = (process.env.SUPABASE_URL ?? '').replace(/\/+$/, '')
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+const SUPABASE_TABLE = process.env.SUPABASE_TABLE ?? 'work_entries'
+const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+const ALL_ASSIGNEE_VALUES = new Set(['전체', '?꾩껜', 'all', 'ALL'])
 
 const getCorsHeaders = (req) => {
   const requestOrigin = req.headers.origin
@@ -104,10 +82,13 @@ const parseBody = async (req) =>
     req.on('error', reject)
   })
 
-const normalizeAssignee = (assignee) => (assignee === '전체' ? '' : assignee ?? '')
+const normalizeAssignee = (assignee) => {
+  const value = (assignee ?? '').trim()
+  if (!value) return ''
+  return ALL_ASSIGNEE_VALUES.has(value) ? '' : value
+}
 
 const sortByDateDesc = (items) => items.sort((a, b) => (a.date < b.date ? 1 : -1))
-
 const makeId = () => `${Date.now()}-${Math.floor(Math.random() * 100000)}`
 
 const toRoute = (pathname) => {
@@ -116,7 +97,170 @@ const toRoute = (pathname) => {
   return route || '/'
 }
 
-await ensureDataFile()
+const ensureDataFile = async () => {
+  const dir = path.dirname(DATA_FILE)
+  await fs.mkdir(dir, { recursive: true })
+
+  try {
+    await fs.access(DATA_FILE)
+  } catch {
+    await fs.writeFile(DATA_FILE, '[]\n', 'utf8')
+  }
+}
+
+const readFileEntries = async () => {
+  const raw = await fs.readFile(DATA_FILE, 'utf8')
+  const parsed = JSON.parse(raw)
+  if (!Array.isArray(parsed)) {
+    throw new Error('DATA_FILE must be an array')
+  }
+  return parsed
+}
+
+const writeFileEntries = async (entries) => {
+  await fs.writeFile(DATA_FILE, `${JSON.stringify(entries, null, 2)}\n`, 'utf8')
+}
+
+const encodeFilterValue = (value) => encodeURIComponent(String(value))
+
+const supabaseRequest = async (method, query = '', body) => {
+  const endpoint = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}${query}`
+  const headers = {
+    apikey: SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    'Content-Type': 'application/json',
+    Prefer: 'return=representation',
+  }
+
+  const response = await fetch(endpoint, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Supabase request failed (${response.status}): ${text}`)
+  }
+
+  if (response.status === 204) {
+    return []
+  }
+
+  const text = await response.text()
+  return text ? JSON.parse(text) : []
+}
+
+const rowToEntry = (row) => {
+  const payload = typeof row.payload === 'object' && row.payload ? row.payload : {}
+  return {
+    id: row.id,
+    ...payload,
+    date: row.date,
+    assignee: row.assignee,
+  }
+}
+
+const createFileStore = () => ({
+  async init() {
+    await ensureDataFile()
+  },
+  async getAssignees() {
+    const entries = await readFileEntries()
+    const names = [...new Set(entries.map((entry) => entry.assignee).filter(Boolean))]
+    return names.sort((a, b) => String(a).localeCompare(String(b), 'ko'))
+  },
+  async listDaily({ date, assignee }) {
+    const entries = await readFileEntries()
+    return sortByDateDesc(
+      entries.filter((entry) => {
+        const matchDate = !date || entry.date === date
+        const matchAssignee = !assignee || entry.assignee === assignee
+        return matchDate && matchAssignee
+      }),
+    )
+  },
+  async listDownload({ startDate, endDate, assignee }) {
+    const entries = await readFileEntries()
+    return sortByDateDesc(
+      entries.filter((entry) => {
+        const date = entry.date ?? ''
+        const matchFrom = !startDate || date >= startDate
+        const matchTo = !endDate || date <= endDate
+        const matchAssignee = !assignee || entry.assignee === assignee
+        return matchFrom && matchTo && matchAssignee
+      }),
+    )
+  },
+  async getById(id) {
+    const entries = await readFileEntries()
+    return entries.find((entry) => entry.id === id) ?? null
+  },
+  async create(payload) {
+    const entries = await readFileEntries()
+    const next = { id: makeId(), ...payload }
+    entries.unshift(next)
+    await writeFileEntries(entries)
+    return next
+  },
+  async update(id, payload) {
+    const entries = await readFileEntries()
+    const index = entries.findIndex((entry) => entry.id === id)
+    if (index < 0) return null
+    const updated = { id, ...payload }
+    entries[index] = updated
+    await writeFileEntries(entries)
+    return updated
+  },
+})
+
+const createSupabaseStore = () => ({
+  async init() {
+    await supabaseRequest('GET', '?select=id&limit=1')
+  },
+  async getAssignees() {
+    const rows = await supabaseRequest('GET', '?select=assignee')
+    const names = [...new Set(rows.map((row) => row.assignee).filter(Boolean))]
+    return names.sort((a, b) => String(a).localeCompare(String(b), 'ko'))
+  },
+  async listDaily({ date, assignee }) {
+    const params = ['select=*', 'order=date.desc']
+    if (date) params.push(`date=eq.${encodeFilterValue(date)}`)
+    if (assignee) params.push(`assignee=eq.${encodeFilterValue(assignee)}`)
+    const rows = await supabaseRequest('GET', `?${params.join('&')}`)
+    return rows.map(rowToEntry)
+  },
+  async listDownload({ startDate, endDate, assignee }) {
+    const params = ['select=*', 'order=date.desc']
+    if (startDate) params.push(`date=gte.${encodeFilterValue(startDate)}`)
+    if (endDate) params.push(`date=lte.${encodeFilterValue(endDate)}`)
+    if (assignee) params.push(`assignee=eq.${encodeFilterValue(assignee)}`)
+    const rows = await supabaseRequest('GET', `?${params.join('&')}`)
+    return rows.map(rowToEntry)
+  },
+  async getById(id) {
+    const rows = await supabaseRequest('GET', `?select=*&id=eq.${encodeFilterValue(id)}&limit=1`)
+    if (!rows.length) return null
+    return rowToEntry(rows[0])
+  },
+  async create(payload) {
+    const nextId = makeId()
+    const date = String(payload.date ?? '')
+    const assignee = String(payload.assignee ?? '')
+    const rows = await supabaseRequest('POST', '', { id: nextId, date, assignee, payload })
+    return rows.length ? rowToEntry(rows[0]) : { id: nextId, ...payload, date, assignee }
+  },
+  async update(id, payload) {
+    const date = String(payload.date ?? '')
+    const assignee = String(payload.assignee ?? '')
+    const rows = await supabaseRequest('PATCH', `?id=eq.${encodeFilterValue(id)}`, { date, assignee, payload })
+    if (!rows.length) return null
+    return rowToEntry(rows[0])
+  },
+})
+
+const store = USE_SUPABASE ? createSupabaseStore() : createFileStore()
+await store.init()
 
 const server = createServer(async (req, res) => {
   try {
@@ -141,9 +285,7 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && route === '/work-entries/assignees') {
-      const entries = await readEntries()
-      const names = [...new Set(entries.map((entry) => entry.assignee).filter(Boolean))]
-      names.sort((a, b) => String(a).localeCompare(String(b), 'ko'))
+      const names = await store.getAssignees()
       sendJson(req, res, 200, ['전체', ...names])
       return
     }
@@ -151,15 +293,8 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && route === '/work-entries') {
       const date = url.searchParams.get('date') ?? ''
       const assignee = normalizeAssignee(url.searchParams.get('assignee'))
-      const entries = await readEntries()
-
-      const filtered = entries.filter((entry) => {
-        const matchDate = !date || entry.date === date
-        const matchAssignee = !assignee || entry.assignee === assignee
-        return matchDate && matchAssignee
-      })
-
-      sendJson(req, res, 200, sortByDateDesc(filtered))
+      const entries = await store.listDaily({ date, assignee })
+      sendJson(req, res, 200, entries)
       return
     }
 
@@ -167,57 +302,38 @@ const server = createServer(async (req, res) => {
       const startDate = url.searchParams.get('startDate') ?? ''
       const endDate = url.searchParams.get('endDate') ?? ''
       const assignee = normalizeAssignee(url.searchParams.get('assignee'))
-      const entries = await readEntries()
-
-      const filtered = entries.filter((entry) => {
-        const date = entry.date ?? ''
-        const matchFrom = !startDate || date >= startDate
-        const matchTo = !endDate || date <= endDate
-        const matchAssignee = !assignee || entry.assignee === assignee
-        return matchFrom && matchTo && matchAssignee
-      })
-
-      sendJson(req, res, 200, sortByDateDesc(filtered))
+      const entries = await store.listDownload({ startDate, endDate, assignee })
+      sendJson(req, res, 200, entries)
       return
     }
 
     const entryMatch = route.match(/^\/work-entries\/([^/]+)$/)
     if (req.method === 'GET' && entryMatch) {
       const id = decodeURIComponent(entryMatch[1])
-      const entries = await readEntries()
-      const found = entries.find((entry) => entry.id === id)
+      const found = await store.getById(id)
       if (!found) {
         sendText(req, res, 404, 'Work entry not found')
         return
       }
-
       sendJson(req, res, 200, found)
       return
     }
 
     if (req.method === 'POST' && route === '/work-entries') {
       const payload = await parseBody(req)
-      const entries = await readEntries()
-      const next = { id: makeId(), ...payload }
-      entries.unshift(next)
-      await writeEntries(entries)
-      sendJson(req, res, 201, next)
+      const created = await store.create(payload)
+      sendJson(req, res, 201, created)
       return
     }
 
     if (req.method === 'PUT' && entryMatch) {
       const id = decodeURIComponent(entryMatch[1])
       const payload = await parseBody(req)
-      const entries = await readEntries()
-      const index = entries.findIndex((entry) => entry.id === id)
-      if (index < 0) {
+      const updated = await store.update(id, payload)
+      if (!updated) {
         sendText(req, res, 404, 'Work entry not found')
         return
       }
-
-      const updated = { id, ...payload }
-      entries[index] = updated
-      await writeEntries(entries)
       sendJson(req, res, 200, updated)
       return
     }
@@ -231,5 +347,11 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`WorkEntries API listening on http://localhost:${PORT}${API_BASE_PATH}`)
-  console.log(`DATA_FILE=${DATA_FILE}`)
+  console.log(`DATA_MODE=${USE_SUPABASE ? 'supabase' : 'file'}`)
+  if (USE_SUPABASE) {
+    console.log(`SUPABASE_URL=${SUPABASE_URL}`)
+    console.log(`SUPABASE_TABLE=${SUPABASE_TABLE}`)
+  } else {
+    console.log(`DATA_FILE=${DATA_FILE}`)
+  }
 })

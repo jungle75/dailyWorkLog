@@ -1,20 +1,45 @@
-# Shared Data Setup (for 6 users)
+# Shared Data Setup (Render Free + Supabase)
 
-GitHub Pages serves only static files, so `localStorage` data is not shared between users.
-To share "업무 등록" data, run/deploy the API server in this repository and connect the frontend to it.
+`GitHub Pages` is static hosting, so browser `localStorage` is not shared across users.
+This project now supports shared storage through **Supabase** while keeping the same API contract.
 
-## 1) Run API locally
+## 1) Create Supabase table
 
-```bash
-npm run api:dev
-```
+1. Open Supabase project -> `SQL Editor`
+2. Run: [server/supabase/schema.sql](/C:/ai-study/dailyWorkLog-1/server/supabase/schema.sql)
+3. In `Project Settings -> API`, copy:
+   - `Project URL` (SUPABASE_URL)
+   - `service_role` key (SUPABASE_SERVICE_ROLE_KEY)
 
-Server default URL:
-- `http://localhost:8080/api`
+## 2) Render deployment
 
-## 2) Frontend environment
+1. Push this repo (includes [render.yaml](/C:/ai-study/dailyWorkLog-1/render.yaml))
+2. Render -> `New +` -> `Web Service` (or Blueprint)
+3. Use:
+   - Build Command: `npm ci`
+   - Start Command: `npm run api:start`
+4. Add environment variables in Render:
+   - `API_BASE_PATH=/api`
+   - `CORS_ORIGIN=https://jungle75.github.io,http://localhost:5173`
+   - `SUPABASE_URL=<your supabase project url>`
+   - `SUPABASE_SERVICE_ROLE_KEY=<your service role key>`
+   - `SUPABASE_TABLE=work_entries`
+5. Deploy and verify:
+   - `https://<render-service>.onrender.com/api/work-entries/assignees`
 
-Create `.env` in project root:
+## 3) Connect frontend (GitHub Pages build)
+
+In GitHub repository:
+
+`Settings -> Secrets and variables -> Actions -> Variables`
+
+- `VITE_API_BASE_URL=https://<render-service>.onrender.com/api`
+
+Then push to `main` to trigger Pages deploy.
+
+## 4) Local development
+
+Root `.env` example:
 
 ```bash
 VITE_API_BASE_URL=http://localhost:8080/api
@@ -22,42 +47,9 @@ VITE_API_TIMEOUT_MS=10000
 VITE_API_USE_LOCAL_FALLBACK=false
 ```
 
-Then run frontend:
+Run:
 
 ```bash
+npm run api:dev
 npm run dev
 ```
-
-## 3) Deploy for real shared usage
-
-1. Deploy `server/index.mjs` to a Node hosting service (Render, Railway, Fly.io, etc.)
-2. Set backend env:
-   - `PORT` (provided by host)
-   - `API_BASE_PATH=/api`
-   - `CORS_ORIGIN=https://jungle75.github.io`
-   - `DATA_FILE=/persistent-disk/work-entries.json` (must be persistent storage path)
-3. Update frontend `.env`:
-   - `VITE_API_BASE_URL=https://<your-backend-domain>/api`
-   - `VITE_API_USE_LOCAL_FALLBACK=false`
-4. Rebuild and redeploy frontend to GitHub Pages.
-
-## Render quick setup (recommended)
-
-1. Push this repo with `render.yaml`.
-2. In Render: `New +` -> `Blueprint` -> select this repository.
-3. Render will create `daily-worklog-api` service with persistent disk at `/var/data`.
-4. After deploy, copy API URL:
-   - `https://<render-service>.onrender.com/api`
-5. In GitHub repository:
-   - `Settings -> Secrets and variables -> Actions -> Variables`
-   - create `VITE_API_BASE_URL` with Render URL above
-6. Push to `main` again to trigger Pages deploy (workflow now injects this variable at build time).
-
-## API endpoints
-
-- `GET /api/work-entries/assignees`
-- `GET /api/work-entries?date=YYYY-MM-DD&assignee=...`
-- `GET /api/work-entries/download?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&assignee=...`
-- `GET /api/work-entries/:id`
-- `POST /api/work-entries`
-- `PUT /api/work-entries/:id`
