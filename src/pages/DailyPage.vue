@@ -138,7 +138,7 @@ onMounted(async () => {
             <h3>{{ card.assignee }}</h3>
             <p>{{ card.department }}</p>
           </div>
-          <div><small>내일 근무형태 :</small><span :class="statusClass(card.workStatus)">{{ card.workStatus }}</span></div>
+          <div><small>내일 근무형태 :</small> <span :class="statusClass(card.workStatus)">{{ card.workStatus }}</span></div>
         </div>
 
         <div class="task-list">
