@@ -119,26 +119,29 @@ onMounted(async () => {
 <template>
   <section class="panel">
     <header class="panel-header">
-      <h2>SR관리대장 다운로드</h2>
+      <h2>SR관리대장</h2>
       <RouterLink to="/daily" class="btn btn-outline">목록으로</RouterLink>
     </header>
 
-    <div class="filter-row column-wrap">
-      <label>
-        시작일
-        <input v-model="draftFilter.startDate" type="date" />
-      </label>
-      <label>
-        종료일
-        <input v-model="draftFilter.endDate" type="date" />
-      </label>
-      <label>
-        작성자
-        <select v-model="draftFilter.assignee">
-          <option v-for="name in assigneeOptions" :key="name" :value="name">{{ name }}</option>
-        </select>
-      </label>
-      <button class="btn" :disabled="loading" @click="applyFilter">조회</button>
+    <div class="filter-row">
+      <div class="filter-item">
+        <label>
+          시작일
+          <input v-model="draftFilter.startDate" type="date" />
+        </label>
+        <label>
+          종료일
+          <input v-model="draftFilter.endDate" type="date" />
+        </label>
+        <label>
+          작성자
+          <select v-model="draftFilter.assignee">
+            <option v-for="name in assigneeOptions" :key="name" :value="name">{{ name }}</option>
+          </select>
+        </label>
+        <button class="btn" :disabled="loading" @click="applyFilter">조회</button>
+      </div>
+      
       <button class="btn btn-outline" :disabled="loading || rows.length === 0" @click="downloadCsv">엑셀 다운로드</button>
     </div>
 
