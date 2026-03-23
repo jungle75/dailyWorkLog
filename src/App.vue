@@ -6,10 +6,10 @@ import { RouterView } from 'vue-router'
   <main class="app-shell">
     <header class="top-header">
       <div class="brand-wrap">
-        <img src="/joins.png" alt="logo" class="brand-logo" />
         <div>
           <h1>디자인파트 일일 업무</h1>
         </div>
+        <img src="/joins.png" alt="logo" class="brand-logo" />        
       </div>
     </header>
 
