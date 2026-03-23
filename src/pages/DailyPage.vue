@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import WorkEntryModal from '../components/WorkEntryModal.vue'
-import { createDefaultForm, getEntryById, queryDailyCards, toEntryForm, upsertEntry } from '../composables/useWorkEntries'
+import { createDefaultForm, deleteEntryById, getEntryById, queryDailyCards, toEntryForm, upsertEntry } from '../composables/useWorkEntries'
 import type { DailyCard, EntryForm } from '../types'
 
 const today = new Date().toISOString().slice(0, 10)
@@ -85,6 +85,23 @@ const onSave = async (payload: EntryForm) => {
   }
 }
 
+const onDelete = async (id: string) => {
+  const confirmed = window.confirm('선택한 업무를 삭제하시겠습니까?')
+  if (!confirmed) return
+
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    await deleteEntryById(id)
+    await applyFilter()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '삭제 중 오류가 발생했습니다.'
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(async () => {
   await applyFilter()
 })
@@ -128,7 +145,10 @@ onMounted(async () => {
           <div v-for="entry in card.entries" :key="entry.id" class="task-item">
             <div class="task-head">
               <h4>{{ entry.detail }}</h4>
-              <button class="btn btn-outline mini" :disabled="loading" @click="openEdit(entry.id)">수정</button>
+              <div class="task-actions">
+                <button class="btn btn-outline mini" :disabled="loading" @click="openEdit(entry.id)">수정</button>
+                <button class="btn btn-outline mini" :disabled="loading" @click="onDelete(entry.id)">삭제</button>
+              </div>
             </div>
             <p>{{ entry.srType }} · {{ entry.projectName }} · {{ entry.targetSystem }}</p>
             <small>

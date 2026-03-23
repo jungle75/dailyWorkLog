@@ -20,6 +20,7 @@ export interface WorkEntriesApi {
   getEntry: (id: string) => Promise<WorkEntry | null>
   createEntry: (payload: WorkEntryPayload) => Promise<WorkEntry>
   updateEntry: (id: string, payload: WorkEntryPayload) => Promise<WorkEntry>
+  deleteEntry: (id: string) => Promise<void>
 }
 
 const makeId = () => `${Date.now()}-${Math.floor(Math.random() * 100000)}`
@@ -131,6 +132,16 @@ const localApi: WorkEntriesApi = {
     writeStorage(current)
     return updated
   },
+
+  async deleteEntry(id) {
+    const current = readStorage()
+    const index = current.findIndex((item) => item.id === id)
+    if (index < 0) {
+      throw new Error('삭제할 업무를 찾을 수 없습니다.')
+    }
+    current.splice(index, 1)
+    writeStorage(current)
+  },
 }
 
 const buildQuery = (query: Record<string, string | number | undefined>) => {
@@ -213,6 +224,12 @@ const remoteApi: WorkEntriesApi = {
       body: JSON.stringify(payload),
     })
   },
+
+  async deleteEntry(id) {
+    await request<void>(`/work-entries/${id}`, {
+      method: 'DELETE',
+    })
+  },
 }
 
 const withFallback = async <T>(task: () => Promise<T>, fallbackTask: () => Promise<T>) => {
@@ -243,6 +260,7 @@ export const workEntriesApi: WorkEntriesApi = {
   getEntry: (id) => withFallback(() => remoteApi.getEntry(id), () => localApi.getEntry(id)),
   createEntry: (payload) => withFallback(() => remoteApi.createEntry(payload), () => localApi.createEntry(payload)),
   updateEntry: (id, payload) => withFallback(() => remoteApi.updateEntry(id, payload), () => localApi.updateEntry(id, payload)),
+  deleteEntry: (id) => withFallback(() => remoteApi.deleteEntry(id), () => localApi.deleteEntry(id)),
 }
 
 export const toWorkEntryPayload = toPayload

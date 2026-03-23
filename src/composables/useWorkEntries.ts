@@ -90,3 +90,7 @@ export const upsertEntry = async (form: EntryForm, id?: string): Promise<WorkEnt
   }
   return workEntriesApi.createEntry(payload)
 }
+
+export const deleteEntryById = async (id: string): Promise<void> => {
+  return workEntriesApi.deleteEntry(id)
+}

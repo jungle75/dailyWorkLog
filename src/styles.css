@@ -255,6 +255,11 @@ label {
   align-items: center;
 }
 
+.task-actions {
+  display: flex;
+  gap: 6px;
+}
+
 .task-item h4 {
   margin: 0;
   font-size: 14px;

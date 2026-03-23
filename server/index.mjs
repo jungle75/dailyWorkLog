@@ -30,7 +30,7 @@ const getCorsHeaders = (req) => {
 
   const headers = {
     'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   }
 
@@ -212,6 +212,14 @@ const createFileStore = () => ({
     await writeFileEntries(entries)
     return updated
   },
+  async remove(id) {
+    const entries = await readFileEntries()
+    const index = entries.findIndex((entry) => entry.id === id)
+    if (index < 0) return false
+    entries.splice(index, 1)
+    await writeFileEntries(entries)
+    return true
+  },
 })
 
 const createSupabaseStore = () => ({
@@ -256,6 +264,10 @@ const createSupabaseStore = () => ({
     const rows = await supabaseRequest('PATCH', `?id=eq.${encodeFilterValue(id)}`, { date, assignee, payload })
     if (!rows.length) return null
     return rowToEntry(rows[0])
+  },
+  async remove(id) {
+    const rows = await supabaseRequest('DELETE', `?id=eq.${encodeFilterValue(id)}`)
+    return rows.length > 0
   },
 })
 
@@ -335,6 +347,20 @@ const server = createServer(async (req, res) => {
         return
       }
       sendJson(req, res, 200, updated)
+      return
+    }
+
+    if (req.method === 'DELETE' && entryMatch) {
+      const id = decodeURIComponent(entryMatch[1])
+      const removed = await store.remove(id)
+      if (!removed) {
+        sendText(req, res, 404, 'Work entry not found')
+        return
+      }
+      res.writeHead(204, {
+        ...getCorsHeaders(req),
+      })
+      res.end()
       return
     }
 
