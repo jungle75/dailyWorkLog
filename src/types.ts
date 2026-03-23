@@ -1,4 +1,4 @@
-﻿export type DailyStatus = '정상출근' | '휴가' | '출장' | '휴일' | '재택'
+﻿export type DailyStatus = '정상출근' | '출근' | '휴가' | '출장' | '휴일' | '재택'
 
 export interface WorkEntry {
   id: string
@@ -55,3 +55,4 @@ export interface EntryForm {
   endDate: string
   detail: string
 }
+

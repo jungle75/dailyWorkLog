@@ -24,7 +24,7 @@ watch(
 )
 
 const assigneeOptions = ['김경은', '김지연', '장소영', '정인애', '박세은', '김미정']
-const statuses: DailyStatus[] = ['휴일', '재택']
+const statuses: DailyStatus[] = ['출근', '휴일', '재택']
 const srTypeOptions = ['업무문의', '단순작업', '자료작성', '디자인-퍼블리싱-신규', '디자인-퍼블리싱-수정']
 const requestTypeOptions = ['디자인시안요청서', '업무연락', '메일', '전화', '메신저', '기타']
 const divisionNameOptions = [

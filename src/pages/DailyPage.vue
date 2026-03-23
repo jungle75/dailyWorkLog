@@ -22,7 +22,7 @@ const editingId = ref<string | null>(null)
 const modalForm = ref<EntryForm>(createDefaultForm(today))
 
 const statusClass = (status: string) => {
-  if (status === '정상출근') return 'badge badge-success'
+  if (status === '정상출근' || status === '출근') return 'badge badge-success'
   if (status === '휴가' || status === '휴일') return 'badge badge-warning'
   if (status === '출장' || status === '재택') return 'badge badge-primary'
   return 'badge'
