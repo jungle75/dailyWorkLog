@@ -97,7 +97,7 @@ onMounted(async () => {
     </header> -->
 
     <div class="filter-row">
-      <div>
+      <div class="filter-item">
         <label>
           <input v-model="draftFilter.date" type="date" />
         </label>

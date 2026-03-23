@@ -147,6 +147,7 @@ button:disabled {
 
 .filter-row {
   display: flex;
+  gap: 8px;
   justify-content: space-between;
   align-items: flex-end;
   padding: 12px;
@@ -154,7 +155,11 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: 10px;
 }
-
+.filter-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 .column-wrap {
   flex-wrap: wrap;
 }
