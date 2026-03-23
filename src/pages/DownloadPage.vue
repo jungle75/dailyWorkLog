@@ -120,7 +120,7 @@ onMounted(async () => {
   <section class="panel">
     <header class="panel-header">
       <h2>SR관리대장</h2>
-      <RouterLink to="/daily" class="btn btn-outline">목록으로</RouterLink>
+      <RouterLink to="/daily" class="btn btn-outline">업무등록</RouterLink>
     </header>
 
     <div class="filter-row">

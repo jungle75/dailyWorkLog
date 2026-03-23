@@ -158,7 +158,7 @@ button:disabled {
 .filter-item {
   display: flex;
   gap: 8px;
-  align-items: center;
+  align-items: self-end;
 }
 .column-wrap {
   flex-wrap: wrap;
