@@ -7,7 +7,7 @@ import { RouterView } from 'vue-router'
     <header class="top-header">
       <div class="brand-wrap">
         <div>
-          <h1>디자인파트 일일 업무</h1>
+          <h1>UX기획팀 디자인파트 일일 업무</h1>
         </div>
         <img src="/joins.png" alt="logo" class="brand-logo" />        
       </div>
