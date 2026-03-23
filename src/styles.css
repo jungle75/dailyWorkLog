@@ -44,7 +44,7 @@ textarea {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 10px;
   background: #fff;
 }
 
@@ -55,9 +55,9 @@ select {
   -webkit-appearance: none; /* 크롬, 사파리, 최신 엣지 */
   -moz-appearance: none;    /* 파이어폭스 */
   appearance: none;
-  padding: 10px 16px 10px 12px;
+  padding: 10px 22px 10px 10px;
   background: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"%3E%3Cpath d="M12 6L8 10L4 6" stroke=" %23878A93" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/%3E%3C/svg%3E') no-repeat;
-  background-position: center right;
+  background-position: center right 8px;
   background-size: 16px;
 }
 
