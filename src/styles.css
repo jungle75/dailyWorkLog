@@ -22,6 +22,7 @@ body {
   height: 100vh;
   margin: 0;
   font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
   color: var(--text-primary);
   background: linear-gradient(180deg, #f6f9fc 0%, #eef3f9 100%);
 }
@@ -45,6 +46,16 @@ textarea {
   border-radius: 8px;
   padding: 10px 12px;
   background: #fff;
+}
+
+select::-ms-expand{display:none;}
+select:disabled{pointer-events:none;}
+
+select {
+  padding: 10px 16px 10px 12px;
+  background: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"%3E%3Cpath d="M12 6L8 10L4 6" stroke=" %23878A93" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/%3E%3C/svg%3E') no-repeat;
+  background-position: center right;
+  background-size: 16px;
 }
 
 textarea {
