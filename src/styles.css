@@ -428,7 +428,6 @@ td:last-child {
 .form-grid.three {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-
 @media (max-width: 1024px) {
   .top-header {
     flex-direction: column;
