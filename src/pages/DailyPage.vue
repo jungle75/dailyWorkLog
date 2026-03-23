@@ -95,7 +95,7 @@ onMounted(async () => {
     <header class="panel-header">
       <h2>일일 업무 목록</h2>
       <div class="button-row">
-        <RouterLink to="/download" class="btn btn-outline">SR관리대장 다운로드</RouterLink>
+        <RouterLink to="/download" class="btn btn-outline">SR관리대장</RouterLink>
         <button class="btn" @click="openCreate">업무 등록</button>
       </div>
     </header>
