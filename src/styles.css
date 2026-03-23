@@ -147,7 +147,7 @@ button:disabled {
 
 .filter-row {
   display: flex;
-  gap: 8px;
+  justify-content: space-between;
   align-items: flex-end;
   padding: 12px;
   background: var(--bg-surface);

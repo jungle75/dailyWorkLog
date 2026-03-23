@@ -92,19 +92,22 @@ onMounted(async () => {
 
 <template>
   <section class="panel">
-    <header class="panel-header">
+    <!-- <header class="panel-header">
       <h2>일일 업무 목록</h2>
+    </header> -->
+
+    <div class="filter-row">
+      <div>
+        <label>
+          <input v-model="draftFilter.date" type="date" />
+        </label>
+        <button class="btn" :disabled="loading" @click="applyFilter">조회</button>
+      </div>
+      
       <div class="button-row">
         <RouterLink to="/download" class="btn btn-outline">SR관리대장</RouterLink>
         <button class="btn" @click="openCreate">업무 등록</button>
       </div>
-    </header>
-
-    <div class="filter-row">
-      <label>
-        <input v-model="draftFilter.date" type="date" />
-      </label>
-      <button class="btn" :disabled="loading" @click="applyFilter">조회</button>
     </div>
 
     <p class="summary">총 {{ totalCount }}건</p>
